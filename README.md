@@ -30,7 +30,7 @@ That pixel is a conifer stand clearcut around 2001 — the fit bottoms out at 20
 recovers through 2016. (Installed via `pip` without the repo? Pass your own per-year NBR
 array — loss-down `float32`, `NaN` for cloud gaps — in place of the bundled box.)
 
-Every `LandTrendr.js` runParam is a keyword with the same name and default
+Every LandTrendr runParam maps to a snake_case keyword with the LT-GEE default
 (`max_segments=6`, `spike_threshold=0.9`, `recovery_threshold=0.25`,
 `p_value_threshold=0.05`, `best_model_proportion=0.75`, `min_observations_needed=6`,
 `vertex_count_overshoot=3`, `prevent_one_year_recovery=True`). For a whole raster
