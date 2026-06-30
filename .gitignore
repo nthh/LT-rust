@@ -12,3 +12,6 @@ data/_*.parquet
 # regenerable raster/array caches (fetch_nbr.py / gee_dist_map.py); kept: gee_truth.json
 data/*.tif
 data/*.npz
+
+# generated per-scene comparison figures (python/compare_maps.py)
+*_compare.png

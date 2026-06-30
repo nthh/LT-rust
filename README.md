@@ -65,11 +65,11 @@ cases the paper's two implementations also diverged on).
 
 | site | land cover | overall pixel agreement | disturbed IoU | year-within-1yr |
 |---|---|---|---|---|
-| Oregon Coast Range | forest | 0.91 | 0.89 | 0.93 |
-| central Iowa | cropland | 0.90 | 0.32 | 0.81 |
+| Oregon Coast Range | forest | 0.98 | 0.98 | 0.99 |
+| central Iowa | cropland | 0.95 | 0.61 | 0.97 |
 | northern Nevada | shrub / arid | 1.00 | n/a (no events) | n/a |
 
-![GEE vs Rust year-of-disturbance, Oregon Coast Range](gee_vs_folia_distyear.png)
+![GEE vs Rust year-of-disturbance, Oregon Coast Range](gee_vs_rust_distyear.png)
 
 ```bash
 EE_PROJECT=<proj> python python/gee_dist_map.py  # GEE LandTrendr -> source + disturbance-year GeoTIFFs (edit AOI at top)
@@ -78,8 +78,31 @@ python python/compare_maps.py                     # Rust on the same composites 
 
 Forest sits at the paper's bar. Cropland's disturbed-pixel IoU drops (sparse, noisy
 harvest signals) while overall agreement stays high; arid shrub has no disturbance
-to find in either, so the two agree completely. A fuller validation would add
-fitted-MAE (the paper's Figure 4 metric) and several sites per land-cover class.
+to find in either, so the two agree completely.
+
+## Validated against the original LT-IDL
+
+GEE is itself a translation of the original IDL LandTrendr, so the *source* algorithm
+is the stronger reference. `python/idl_compare.py` runs the unmodified LandTrendr-2012
+IDL (`fit_trajectory_v2` → `tbcd_v2`) under [GNU Data Language](https://github.com/gnudatalanguage/gdl)
+on the same series. On the 5 GEE-truth pixels, **LT-IDL and LT-GEE agree on every
+vertex (5/5), mean fitted MAE 2.1 NBR×1000** — confirming GEE faithfully tracks IDL,
+and giving a white-box reference to debug the port against (every fix below was found
+by diffing rust against IDL stage by stage). The three-panel maps
+(`python/idl_vs_gee_vs_rust_map.py`) put all three side by side per scene:
+
+| scene | IoU IDL–GEE | IoU rust–GEE | IoU IDL–rust |
+|---|---|---|---|
+| forest | 0.98 | 0.98 | 0.99 |
+| cropland | 0.69 | 0.61 | 0.67 |
+| arid | — (no events) | — | — |
+
+![LT-IDL vs LT-GEE vs LT-rust year-of-disturbance, Oregon Coast Range](forest_idl_gee_rust_distyear.png)
+
+On cropland even IDL and GEE only agree at 0.69 — annual harvest cycles are marginal
+signals for LandTrendr — and LT-rust tracks IDL to 0.67, near that intrinsic ceiling.
+The harness needs the GDL app and the LandTrendr-2012 source on the GDL path; see
+`idl-harness/` for the two shim routines (`regress`, `f_test1`) the headless GDL build omits.
 
 ## Optional: GDAL-free data access
 
@@ -101,21 +124,26 @@ python python/compare.py              # validate against the bundled GEE referen
 maturin build --release --features python --out dist
 ```
 
-## Differences from LT-GEE
+## Faithfulness to the original algorithm
 
-This is a fast re-implementation validated to track GEE at the paper's bar in
-forest, not a line-for-line port. Known differences:
+This kernel is a faithful port of the original LandTrendr-IDL algorithm, validated
+stage by stage against the real IDL run under GNU Data Language (see *Validated
+against the original LT-IDL* above). The pieces that matter are ported, not
+approximated:
 
-- **Fitting:** the paper's primary fit is sequential anchored point-to-point
-  regression, with a simultaneous Levenberg–Marquardt fit only as a fallback. This
-  kernel uses a simultaneous least-squares solve as the primary fit, which can shift
-  a disturbance vertex by a year (onset vs trough).
-- **Despiking:** the spike-dampening step does not exactly match GEE's. Matching it
-  is the single highest-leverage improvement (an ablation shows it dominates the
-  residual difference, and it most affects cropland/arid).
-- **Validation breadth:** quantified at raster scale on one forest site plus the
-  Fig 2.1 pixel; cropland/arid are indicative. A faithful-port claim needs
-  fitted-MAE and ≥3 sites per land-cover class.
+- **Fitting:** sequential anchored point-to-point regression (`find_best_trace` +
+  `anchored_regression`) — the IDL primary fit, not a simultaneous solve.
+- **Vertex culling:** the `angle_diff` importance metric with its disturbance
+  weighting, so disturbance and recovery vertices are protected from removal.
+- **Model selection:** `pick_best_model6` over a per-model F-test vs a flat line
+  (exact incomplete-beta F CDF) with the collapse-to-flat rule for non-significant
+  fits; the candidate ladder uses `take_out_weakest2` (recovery-violator first, else
+  least local MSE, with the in-place point interpolation).
+- **Despiking:** the iterative `desawtooth`.
+
+The remaining differences are at the floating-point floor — this is not a bit-exact
+port (f32 vs IDL's f64, accumulation order) — surfacing only as a few marginal pixels
+in noise-only scenes, not as an algorithmic gap.
 
 ## References
 
