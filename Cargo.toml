@@ -1,9 +1,9 @@
 [package]
 name = "lt-rust"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
-description = "LandTrendr temporal segmentation — standalone Rust port, validated against native GEE LandTrendr."
+description = "LandTrendr temporal segmentation — standalone Rust port, validated against the original LandTrendr-IDL and native GEE."
 
 [lib]
 name = "lt_rust"
