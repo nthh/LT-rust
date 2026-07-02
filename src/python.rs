@@ -100,19 +100,20 @@ fn pixel_debug<'py>(
     (PyArray1::from_vec(py, desp).into(), cand, vet)
 }
 
-/// Validate a (pixel_count, n_years) stack against `years` and view it as the
-/// pixel-major flat slice the core expects. `owned` backs a copy when the
-/// input is not C-contiguous.
+/// Validate a (n_years, n_pixels) stack against `years` and view it as the
+/// band-major flat slice the core expects (all pixels for year 0, then year 1,
+/// ... — the native layout of a loaded raster time series). `owned` backs a
+/// copy when the input is not C-contiguous.
 fn stack_slice<'a>(
     data: &'a PyReadonlyArray2<'a, f32>,
     years_len: usize,
     owned: &'a mut Vec<f32>,
 ) -> PyResult<(&'a [f32], usize, usize)> {
     let shape = data.shape();
-    let (pixel_count, band_count) = (shape[0], shape[1]);
+    let (band_count, pixel_count) = (shape[0], shape[1]);
     if band_count != years_len {
         return Err(PyValueError::new_err(format!(
-            "data has {band_count} years per pixel (axis 1) but `years` has {years_len}"
+            "data has {band_count} years (axis 0) but `years` has {years_len}"
         )));
     }
     // as_slice() also succeeds for Fortran-contiguous arrays (raw buffer in
@@ -127,11 +128,11 @@ fn stack_slice<'a>(
     Ok((slice, pixel_count, band_count))
 }
 
-/// Raster-stack LandTrendr over a (pixel_count, n_years) array: returns a
-/// (pixel_count, 4) array of summary bands [net_mag, year, rmse, peak_to_trough].
+/// Raster-stack LandTrendr over a (n_years, n_pixels) array: returns a
+/// (4, n_pixels) array of summary bands [net_mag, year, rmse, peak_to_trough].
 #[pyfunction]
 #[pyo3(signature = (data, years, max_segments=6, spike_threshold=0.9, recovery_threshold=0.25, p_value_threshold=0.05, best_model_proportion=0.75, min_observations_needed=6, vertex_count_overshoot=3, prevent_one_year_recovery=true))]
-fn flat<'py>(
+fn raster_summary<'py>(
     py: Python<'py>,
     data: PyReadonlyArray2<'py, f32>,
     years: PyReadonlyArray1<'py, i32>,
@@ -153,18 +154,18 @@ fn flat<'py>(
     let mut owned = Vec::new();
     let (stack, pixel_count, band_count) = stack_slice(&data, ys.len(), &mut owned)?;
     let out = core_flat(stack, pixel_count, band_count, ys, &p);
-    Ok(PyArray1::from_vec(py, out).reshape([pixel_count, 4])?.into())
+    Ok(PyArray1::from_vec(py, out).reshape([4, pixel_count])?.into())
 }
 
 /// Per-pixel FTV-diff at `target_year` (eMapR `getLtFtvDiff`): `fitted[idx] - fitted[idx-1]`.
 ///
 /// The fitted change *in* the target year, which the forest-loss ensemble stretches to a
-/// 0–100 loss probability. Uses the same fast-path fit as `flat`. Returns
+/// 0–100 loss probability. Uses the same fast-path fit as `raster_summary`. Returns
 /// `pixel_count` f32, signed in the input index's units (NaN where the year is absent /
 /// has no prior year / the pixel is under-observed).
 #[pyfunction]
 #[pyo3(signature = (data, years, target_year, max_segments=6, spike_threshold=0.9, recovery_threshold=0.25, p_value_threshold=0.05, best_model_proportion=0.75, min_observations_needed=6, vertex_count_overshoot=3, prevent_one_year_recovery=true))]
-fn ftvdiff_flat<'py>(
+fn ftvdiff<'py>(
     py: Python<'py>,
     data: PyReadonlyArray2<'py, f32>,
     years: PyReadonlyArray1<'py, i32>,
@@ -193,7 +194,7 @@ fn ftvdiff_flat<'py>(
 /// Windowed loss magnitude around `target_year`: sum of loss-direction fitted drops over
 /// `[target_year - half_window, target_year + half_window]`.
 ///
-/// Higher recall than the single-year `ftvdiff_flat` when a disturbance is fit
+/// Higher recall than the single-year `ftvdiff` when a disturbance is fit
 /// as a multi-year ramp. Returns `pixel_count` f32, non-negative (loss-down convention;
 /// NaN where invalid). `half_window=0` is the single-year loss.
 #[pyfunction]
@@ -229,8 +230,8 @@ fn loss_window<'py>(
 fn landtrendr(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(pixel, m)?)?;
     m.add_function(wrap_pyfunction!(pixel_debug, m)?)?;
-    m.add_function(wrap_pyfunction!(flat, m)?)?;
-    m.add_function(wrap_pyfunction!(ftvdiff_flat, m)?)?;
+    m.add_function(wrap_pyfunction!(raster_summary, m)?)?;
+    m.add_function(wrap_pyfunction!(ftvdiff, m)?)?;
     m.add_function(wrap_pyfunction!(loss_window, m)?)?;
     Ok(())
 }

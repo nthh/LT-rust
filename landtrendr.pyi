@@ -37,7 +37,7 @@ def pixel_debug(
     """Vertex-selection debug tape: (despiked, candidate_vertex_indices,
     vetted_vertex_indices), for differential validation against LT-IDL."""
 
-def flat(
+def raster_summary(
     data: NDArray[np.float32],
     years: NDArray[np.int32],
     max_segments: int = 6,
@@ -49,10 +49,12 @@ def flat(
     vertex_count_overshoot: int = 3,
     prevent_one_year_recovery: bool = True,
 ) -> NDArray[np.float32]:
-    """Raster-stack LandTrendr. `data` has shape (n_pixels, n_years); returns
-    (n_pixels, 4) summary bands [net_mag, year, rmse, peak_to_trough]."""
+    """Raster-stack LandTrendr. `data` has shape (n_years, n_pixels) — the
+    native layout of a loaded raster time series, e.g.
+    stack.reshape(n_years, -1). Returns (4, n_pixels) summary bands
+    [net_mag, year, rmse, peak_to_trough]."""
 
-def ftvdiff_flat(
+def ftvdiff(
     data: NDArray[np.float32],
     years: NDArray[np.int32],
     target_year: int,
@@ -66,7 +68,7 @@ def ftvdiff_flat(
     prevent_one_year_recovery: bool = True,
 ) -> NDArray[np.float32]:
     """Per-pixel fitted change *in* `target_year` (eMapR getLtFtvDiff):
-    fitted[idx] - fitted[idx-1]. `data` has shape (n_pixels, n_years);
+    fitted[idx] - fitted[idx-1]. `data` has shape (n_years, n_pixels);
     returns n_pixels values, NaN where invalid."""
 
 def loss_window(
@@ -85,5 +87,5 @@ def loss_window(
 ) -> NDArray[np.float32]:
     """Windowed loss magnitude around `target_year`: sum of loss-direction
     fitted drops over [target_year - half_window, target_year + half_window].
-    `data` has shape (n_pixels, n_years); returns n_pixels non-negative values,
+    `data` has shape (n_years, n_pixels); returns n_pixels non-negative values,
     NaN where invalid. half_window=0 is the single-year loss."""

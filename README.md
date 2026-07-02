@@ -34,11 +34,17 @@ Every LandTrendr runParam maps to a snake_case keyword with the LT-GEE default
 (`max_segments=6`, `spike_threshold=0.9`, `recovery_threshold=0.25`,
 `p_value_threshold=0.05`, `best_model_proportion=0.75`, `min_observations_needed=6`,
 `vertex_count_overshoot=3`, `prevent_one_year_recovery=True`). For a whole raster
-stack, `lt.flat(stack, years)` takes a `(n_pixels, n_years)` array and returns
-`(n_pixels, 4)` summary bands `[net_mag, year, rmse, peak_to_trough]`.
+stack, `lt.raster_summary` fits every pixel and returns 4 summary bands:
 
-Two raster functions feed the eMapR forest-loss ensemble:
-`lt.ftvdiff_flat(stack, years, target_year)` is the per-year FTV-diff loss signal
+```python
+h, w  = box["annual"].shape[1:]
+stack = box["annual"].reshape(len(years), -1).astype(np.float32)  # (n_years, n_pixels)
+summary = lt.raster_summary(stack, years)   # (4, n_pixels): [net_mag, year, rmse, peak_to_trough]
+dist_year = summary[1].reshape(h, w)        # year-of-disturbance map of the validation box
+```
+
+Two more raster functions feed the eMapR forest-loss ensemble:
+`lt.ftvdiff(stack, years, target_year)` is the per-year FTV-diff loss signal
 (eMapR `getLtFtvDiff`), and `lt.loss_window(stack, years, target_year, half_window)`
 sums loss over a window for higher recall when a disturbance is fit as a multi-year
 ramp. All four take the same runParam keywords.

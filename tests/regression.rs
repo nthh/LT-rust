@@ -75,6 +75,33 @@ fn flat_matches_pixel_on_reference() {
 }
 
 #[test]
+fn flat_layout_is_band_major() {
+    // Pin the data layout: `flat` reads data[t * pixel_count + px] (all pixels
+    // for year 0, then year 1, ...) and returns 4 planar output bands of
+    // pixel_count each. A 2-pixel stack where both pixels are the reference
+    // series must reproduce the single-pixel result twice.
+    let n = YEARS.len();
+    let mut stack = vec![0.0f32; 2 * n];
+    for t in 0..n {
+        stack[t * 2] = NBR[t];
+        stack[t * 2 + 1] = NBR[t];
+    }
+    let out = flat(&stack, 2, n, &YEARS, &LandTrendrParams::default());
+    assert_eq!(out.len(), 8);
+    let expected = [0.224977f32, 2001.0, 0.053808, -0.940335];
+    for band in 0..4 {
+        for px in 0..2 {
+            let got = out[band * 2 + px];
+            assert!(
+                (got - expected[band]).abs() < 1e-4,
+                "band {band} pixel {px}: got {got}, expected {}",
+                expected[band]
+            );
+        }
+    }
+}
+
+#[test]
 fn under_observed_pixel_passes_through() {
     // Fewer valid observations than min_observations_needed → no fit: input
     // echoed back, no vertices, rmse 0.
