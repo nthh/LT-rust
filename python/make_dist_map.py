@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Year-of-disturbance map (the LT-rust side of LT-GEE paper Figure 5).
+"""Year-of-disturbance map (the LT-rs side of LT-GEE paper Figure 5).
 
 Runs LandTrendr per pixel over the cached NBR box, takes the year of the largest
 fitted NBR drop as the disturbance year (masking pixels with no significant drop),
@@ -13,7 +13,7 @@ Run: .venv-lazy/bin/python python/make_dist_map.py
 """
 from pathlib import Path
 import numpy as np
-import lt_rust
+import landtrendr
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -37,7 +37,7 @@ for r in range(H):
         s = annual[:, r, c].astype(np.float32)
         if np.isfinite(s).sum() < RUN["min_observations_needed"]:
             continue
-        fit, _, _ = lt_rust.landtrendr_pixel(
+        fit, _, _ = landtrendr.pixel(
             np.ascontiguousarray(s), years.astype(np.int32), **RUN)
         d = np.diff(np.asarray(fit))
         i = int(np.argmin(d))
@@ -60,7 +60,7 @@ bar_px = 300.0 / px_m
 ax.plot([3, 3 + bar_px], [H - 4, H - 4], color="white", lw=3)
 ax.text(3 + bar_px / 2, H - 5.5, "300 m", color="white", ha="center", va="bottom", fontsize=9)
 
-ax.set_title("LT-rust LandTrendr - year of disturbance\nOregon Coast Range (validation box)",
+ax.set_title("LT-rs LandTrendr - year of disturbance\nOregon Coast Range (validation box)",
              fontsize=10)
 cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, ticks=[1985, 1995, 2005, 2016])
 cb.set_label("year of disturbance")

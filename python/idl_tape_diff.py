@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Stage-by-stage tape diff: LT-rust vs LT-IDL vertex selection.
+"""Stage-by-stage tape diff: LT-rs vs LT-IDL vertex selection.
 
 Confirms the first-divergence localization: dumps each pipeline's intermediate
 vertex sets (stage ② candidates from detection, stage ③ vetted after culling)
-on the same pixel and shows exactly where they first disagree. Uses LT-rust's
-landtrendr_pixel_debug binding and the LT-IDL find_vertices/vet_verts3 under GDL.
+on the same pixel and shows exactly where they first disagree. Uses LT-rs's
+pixel_debug binding and the LT-IDL find_vertices/vet_verts3 under GDL.
 """
 import json
 import os
@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-import lt_rust
+import landtrendr
 
 ROOT = Path(__file__).resolve().parent.parent
 GDL = os.path.expanduser(
@@ -99,7 +99,7 @@ for name in ("center", "n_down"):
     years = np.array(p["years"], int)
     src = np.array(p["source"], float)
 
-    _, rc_idx, rv_idx = lt_rust.landtrendr_pixel_debug(
+    _, rc_idx, rv_idx = landtrendr.pixel_debug(
         np.ascontiguousarray(src / 1000.0, np.float32),
         years.astype(np.int32), **CANON,
     )

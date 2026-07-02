@@ -1,4 +1,4 @@
-# LT-rust
+# LT-rs
 
 Rust **LandTrendr** (Kennedy 2010/2018), validated against the original LandTrendr-IDL
 and Google Earth Engine. A pixel's annual NBR trajectory in, the fitted trajectory and
@@ -10,19 +10,19 @@ Prebuilt wheels (CPython ≥3.10, incl. 3.14) are attached to each
 [release](../../releases) — no Rust toolchain needed:
 
 ```bash
-pip install LT-rust --find-links https://github.com/nthh/LT-rust/releases/expanded_assets/v0.2.0
+pip install landtrendr --find-links https://github.com/nthh/LT-rs/releases/expanded_assets/v0.3.0
 ```
 
 ## Use
 
 ```python
-import numpy as np, lt_rust as lt
+import numpy as np, landtrendr as lt
 
 box   = np.load("data/nbr_1984_2016.npz")        # bundled Landsat NBR box (Oregon Coast Range)
 nbr   = np.ascontiguousarray(box["annual"][:, 26, 26], np.float32)   # center pixel; NaN = cloud gap
 years = box["years"]                             # 1984..2016
 
-fitted, is_vertex, rmse = lt.landtrendr_pixel(nbr, years)   # LT-GEE default runParams
+fitted, is_vertex, rmse = lt.pixel(nbr, years)   # LT-GEE default runParams
 breakpoints = years[is_vertex.astype(bool)]      # [1984, 1985, 2000, 2001, 2002, 2008, 2016]
 ```
 
@@ -34,12 +34,12 @@ Every LandTrendr runParam maps to a snake_case keyword with the LT-GEE default
 (`max_segments=6`, `spike_threshold=0.9`, `recovery_threshold=0.25`,
 `p_value_threshold=0.05`, `best_model_proportion=0.75`, `min_observations_needed=6`,
 `vertex_count_overshoot=3`, `prevent_one_year_recovery=True`). For a whole raster
-stack, use `lt.landtrendr_flat(...)`.
+stack, use `lt.flat(...)`.
 
 Two raster functions feed the eMapR forest-loss ensemble:
-`lt.landtrendr_ftvdiff_flat(data, n_pixels, n_years, years, target_year)` is the
+`lt.ftvdiff_flat(data, n_pixels, n_years, years, target_year)` is the
 per-year FTV-diff loss signal (eMapR `getLtFtvDiff`), and
-`lt.landtrendr_loss_window(..., target_year, half_window)` sums loss over a window
+`lt.loss_window(..., target_year, half_window)` sums loss over a window
 for higher recall when a disturbance is fit as a multi-year ramp. All four take the
 same runParam keywords.
 
@@ -50,7 +50,7 @@ Fed the same NBR series, the Rust fit tracks Earth Engine's LandTrendr *and* the
 IDL, landing the disturbance vertex on the same year — here the LT-GEE Fig 2.1 example
 pixel (mature conifer, clearcut 2001, regrowth to 2016):
 
-![LT-IDL vs LT-GEE vs LT-rust on the Fig 2.1 pixel](images/idl_gee_rust_pixel.png)
+![LT-IDL vs LT-GEE vs LT-rs on the Fig 2.1 pixel](images/idl_gee_rust_pixel.png)
 
 `python/idl_compare.py` runs the unmodified LandTrendr-2012 IDL (`fit_trajectory_v2` →
 `tbcd_v2`) under [GNU Data Language](https://github.com/gnudatalanguage/gdl); on the 5
@@ -69,11 +69,11 @@ per-pixel year of greatest disturbance (disturbed-pixel IoU + overall agreement)
 | central Iowa | cropland | 0.61 | 0.69 | 0.67 | 0.95 |
 | northern Nevada | arid / shrub | — (no events) | — | — | 1.00 |
 
-![LT-IDL vs LT-GEE vs LT-rust year-of-disturbance — Oregon Coast Range forest](images/forest_idl_gee_rust.png)
-![LT-IDL vs LT-GEE vs LT-rust year-of-disturbance — central Iowa cropland](images/cropland_idl_gee_rust.png)
+![LT-IDL vs LT-GEE vs LT-rs year-of-disturbance — Oregon Coast Range forest](images/forest_idl_gee_rust.png)
+![LT-IDL vs LT-GEE vs LT-rs year-of-disturbance — central Iowa cropland](images/cropland_idl_gee_rust.png)
 
 Forest matches closely on all three. On cropland even IDL and GEE only agree at 0.69 —
-annual harvest cycles are marginal signals for LandTrendr — and LT-rust tracks IDL to
+annual harvest cycles are marginal signals for LandTrendr — and LT-rs tracks IDL to
 0.67, near that intrinsic ceiling; arid has no disturbance to find, so all three agree.
 The 3-panel maps come from `python/idl_vs_gee_vs_rust_map.py` (needs GDL; see `idl-harness/`).
 
@@ -81,7 +81,7 @@ The 3-panel maps come from `python/idl_vs_gee_vs_rust_map.py` (needs GDL; see `i
 pip install -r python/requirements.txt
 python python/compare.py                  # single pixel: bundled NBR box + GEE truth
 python python/compare_maps.py             # raster: Rust vs GEE on the bundled composites
-python python/idl_vs_gee_vs_rust_map.py   # raster: LT-IDL vs LT-GEE vs LT-rust (needs GDL)
+python python/idl_vs_gee_vs_rust_map.py   # raster: LT-IDL vs LT-GEE vs LT-rs (needs GDL)
 # the bundled data regenerates with python/fetch_nbr.py and gee_dist_map.py (cloud COGs / EE account)
 ```
 

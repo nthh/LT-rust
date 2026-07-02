@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Spot-check: on cropland pixels where LT-rust (post stage-③/④ fix) calls a
+"""Spot-check: on cropland pixels where LT-rs (post stage-③/④ fix) calls a
 disturbance but GEE does not, does LT-IDL agree with GEE (no disturbance) or with
-LT-rust? Answers whether the fix over-detects on cropland relative to the true IDL
+LT-rs? Answers whether the fix over-detects on cropland relative to the true IDL
 algorithm — i.e. whether the unported stage-② recovery veto is the missing piece.
 """
 import sys
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
-import lt_rust
+import landtrendr
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from idl_compare import idl_fit, CANON  # noqa: E402
@@ -39,7 +39,7 @@ for idx in range(min(flat.shape[0], 40000)):
         continue
     if np.isfinite(gm[idx]) and gm[idx] >= DELTA1000:   # GEE detected -> skip
         continue
-    fit, _, _ = lt_rust.landtrendr_pixel(
+    fit, _, _ = landtrendr.pixel(
         np.ascontiguousarray(s / 1000.0, np.float32), years, **CANON)
     rdrop = max_drop(np.asarray(fit) * 1000.0)
     if rdrop >= DELTA1000:                       # rust detects, GEE doesn't
@@ -60,5 +60,5 @@ for idx, s, rdrop in picks:
 if picks:
     verdict = ("stage-② recovery veto is the cropland fix (IDL suppresses these)"
                if idl_agrees_gee > len(picks) // 2
-               else "GEE itself diverges on cropland; LT-rust may be MORE IDL-faithful")
+               else "GEE itself diverges on cropland; LT-rs may be MORE IDL-faithful")
     print(f"\nIDL agrees with GEE (no disturbance) on {idl_agrees_gee}/{len(picks)}  ->  {verdict}")

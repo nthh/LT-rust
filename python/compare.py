@@ -11,7 +11,7 @@ Two comparisons, both on the reference LT-GEE pixel (-123.845, 45.889):
   B. COMPOSITING: our MPC annual NBR (data/nbr_1984_2016.npz) vs GEE's
      source series — confirms the local read path reproduces GEE's inputs.
 
-Needs data/gee_truth.json (run python/gee_truth.py first) and the lt_rust
+Needs data/gee_truth.json (run python/gee_truth.py first) and the landtrendr
 module (maturin build --features python; pip install the wheel).
 
 Run: python python/compare.py
@@ -19,7 +19,7 @@ Run: python python/compare.py
 import json
 from pathlib import Path
 import numpy as np
-import lt_rust
+import landtrendr
 
 ROOT = Path(__file__).resolve().parent.parent
 GEE = json.load(open(ROOT / "data" / "gee_truth.json"))
@@ -37,7 +37,7 @@ gvy = g["vertex_years"]
 # --- A. algorithm: feed GEE's source into the Rust kernel ----------------------
 # Rust kernel is loss-down on raw NBR; GEE source is NBRx1000 (already un-negated). /1000.
 rsrc = np.ascontiguousarray(gsrc / 1000.0, np.float32)
-rfit, rvtx, rmse = lt_rust.landtrendr_pixel(rsrc, gyears.astype(np.int32), **RUN)
+rfit, rvtx, rmse = landtrendr.pixel(rsrc, gyears.astype(np.int32), **RUN)
 rfit = np.asarray(rfit) * 1000.0
 rvtx = np.asarray(rvtx).astype(int)
 rvy = [int(gyears[i]) for i in range(len(gyears)) if rvtx[i]]
@@ -79,7 +79,7 @@ if both:
 # composited NBR over OUR years (not GEE's source). Scored against GEE fitted /
 # vertices on the overlapping years. This is the only path A and B never compose.
 mraw = np.ascontiguousarray(mpc / 1000.0, np.float32)        # raw NBR (loss-down), our years
-cfit_full, cvtx_full, crmse = lt_rust.landtrendr_pixel(mraw, myears.astype(np.int32), **RUN)
+cfit_full, cvtx_full, crmse = landtrendr.pixel(mraw, myears.astype(np.int32), **RUN)
 cfit_full = np.asarray(cfit_full) * 1000.0
 cvtx_full = np.asarray(cvtx_full).astype(int)
 cfit_by_year = {int(y): cfit_full[i] for i, y in enumerate(myears)}

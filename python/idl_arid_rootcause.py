@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Root-cause one LT-rust arid false positive: dump the full tape for both
+"""Root-cause one LT-rs arid false positive: dump the full tape for both
 pipelines (despiked series, stage-② candidates, stage-③ vetted, final fit) on the
-same pixel and find the FIRST stage where LT-rust and LT-IDL diverge.
+same pixel and find the FIRST stage where LT-rs and LT-IDL diverge.
 """
 import os
 import subprocess
@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
-import lt_rust
+import landtrendr
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from idl_compare import CANON, GDL, HARNESS, LTSRC  # noqa: E402
@@ -27,10 +27,10 @@ years = np.arange(1984, 1984 + T)
 raw = src.reshape(T, -1).T[PIX]               # x1000, NaN nodata
 good = np.where(np.isfinite(raw))[0]
 
-# ---- LT-rust tape ----
+# ---- LT-rs tape ----
 s = np.ascontiguousarray(raw / 1000.0, np.float32)
-desp_r, cand_r, vet_r = lt_rust.landtrendr_pixel_debug(s, years.astype(np.int32), **CANON)
-fit_r, vtx_r, _ = lt_rust.landtrendr_pixel(s, years.astype(np.int32), **CANON)
+desp_r, cand_r, vet_r = landtrendr.pixel_debug(s, years.astype(np.int32), **CANON)
+fit_r, vtx_r, _ = landtrendr.pixel(s, years.astype(np.int32), **CANON)
 desp_r = np.asarray(desp_r) * 1000.0
 fit_r = np.asarray(fit_r) * 1000.0
 

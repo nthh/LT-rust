@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Three-way LandTrendr comparison: LT-IDL (run in GDL) vs LT-GEE vs LT-rust.
+"""Three-way LandTrendr comparison: LT-IDL (run in GDL) vs LT-GEE vs LT-rs.
 
 This is the open-source IDL reference harness for validating the Rust port.
 It runs the *original* LandTrendr-2012 IDL segmentation (fit_trajectory_v2 ->
@@ -26,7 +26,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-import lt_rust
+import landtrendr
 
 ROOT = Path(__file__).resolve().parent.parent
 GDL = os.path.expanduser(
@@ -136,7 +136,7 @@ def main():
 
         ivy, ifit = idl_fit(years, gsrc)
 
-        rfit_raw, rvtx, _ = lt_rust.landtrendr_pixel(
+        rfit_raw, rvtx, _ = landtrendr.pixel(
             np.ascontiguousarray(gsrc / 1000.0, np.float32),
             years.astype(np.int32), **CANON,
         )
@@ -160,7 +160,7 @@ def main():
             center_panel = (years, gsrc, gfit, ifit, rfit, gvy, ivy, rvy)
 
     # ---- table ----
-    print("\n=== LT-IDL (GDL) vs LT-GEE vs LT-rust — 5 GEE-truth pixels ===\n")
+    print("\n=== LT-IDL (GDL) vs LT-GEE vs LT-rs — 5 GEE-truth pixels ===\n")
     print(f"{'pixel':>10} {'IDLvtx=GEE?':>11} {'troughGEE':>9} {'troughIDL':>9} "
           f"{'troughRust':>10} {'MAE(IDL,GEE)':>12} {'MAE(Rust,GEE)':>13}")
     for r in rows:
@@ -187,13 +187,13 @@ def main():
         ax.plot(years, gfit, "-", lw=2.4, color="#1b7837", label="LT-GEE fitted", zorder=3)
         ax.plot(years, ifit, "--", lw=2.4, color="#762a83",
                 label="LT-IDL (GDL) fitted", zorder=4)
-        ax.plot(years, rfit, "-", lw=1.8, color="#d95f02", label="LT-rust fitted", zorder=2)
+        ax.plot(years, rfit, "-", lw=1.8, color="#d95f02", label="LT-rs fitted", zorder=2)
         for vy, c, m in [(gvy, "#1b7837", "v"), (ivy, "#762a83", "^")]:
             yy = np.interp(vy, years, gfit if c == "#1b7837" else ifit)
             ax.plot(vy, yy, m, ms=9, color=c, zorder=5)
         ax.axhline(0, color="0.85", lw=0.8, zorder=0)
-        ax.set_title("Center pixel: LT-IDL (GDL) vs LT-GEE vs LT-rust\n"
-                     "LT-rust now tracks the IDL/GEE reference fit",
+        ax.set_title("Center pixel: LT-IDL (GDL) vs LT-GEE vs LT-rs\n"
+                     "LT-rs now tracks the IDL/GEE reference fit",
                      fontsize=12)
         ax.set_xlabel("year")
         ax.set_ylabel("NBR × 1000 (loss-down)")

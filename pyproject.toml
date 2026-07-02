@@ -3,15 +3,13 @@ requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "LT-rust"
-version = "0.2.0"
+name = "landtrendr"
+version = "0.3.0"
 description = "A Rust implementation of the LandTrendr temporal segmentation algorithm"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.24"]
 
-# Distribution name is LT-rust (pip install LT-rust); the import name stays
-# `lt_rust` (Python modules are lowercase, no hyphens) — cf. scikit-learn / sklearn.
 [tool.maturin]
 features = ["python"]
-module-name = "lt_rust"
+module-name = "landtrendr"

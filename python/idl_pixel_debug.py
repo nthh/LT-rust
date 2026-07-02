@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Localize the cropland over-detection: full IDL-vs-LT-rust tape on one cropland
-pixel where LT-rust calls a disturbance but GEE/IDL do not. Dumps stage-②
+"""Localize the cropland over-detection: full IDL-vs-LT-rs tape on one cropland
+pixel where LT-rs calls a disturbance but GEE/IDL do not. Dumps stage-②
 candidates, stage-③ vetted vertices, selected n_segments, and the final fit drop
 for BOTH pipelines, so we see at which stage they diverge before porting anything.
 """
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
-import lt_rust
+import landtrendr
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from idl_compare import CANON  # noqa: E402
@@ -120,15 +120,15 @@ for idx in range(min(flat.shape[0], 40000)):
         continue
     if np.isfinite(gm[idx]) and gm[idx] >= DELTA1000:
         continue
-    fit, _, _ = lt_rust.landtrendr_pixel(np.ascontiguousarray(s / 1000.0, np.float32), years, **CANON)
+    fit, _, _ = landtrendr.pixel(np.ascontiguousarray(s / 1000.0, np.float32), years, **CANON)
     if drop1000(np.asarray(fit) * 1000.0) >= DELTA1000:
         target = (idx, s)
         break
 
 idx, s = target
-desp, rc_idx, rv_idx = lt_rust.landtrendr_pixel_debug(
+desp, rc_idx, rv_idx = landtrendr.pixel_debug(
     np.ascontiguousarray(s / 1000.0, np.float32), years, **CANON)
-rfit, rvtx, _ = lt_rust.landtrendr_pixel(
+rfit, rvtx, _ = landtrendr.pixel(
     np.ascontiguousarray(s / 1000.0, np.float32), years, **CANON)
 rfit1000 = np.asarray(rfit) * 1000.0
 rc = sorted(int(years[i]) for i in rc_idx)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reproduce the reference LandTrendr example (LT-GEE Fig 2.1) with LT-rust.
+"""Reproduce the reference LandTrendr example (LT-GEE Fig 2.1) with LT-rs.
 
 The textbook pixel: Lon -123.845, Lat 45.889 (Oregon Coast Range, conifer-dominated
 industrial forest): ~17 years stable mature conifer (1984-2000), a service road in
@@ -9,7 +9,7 @@ should place a disturbance vertex at ~2001.
 Pipeline (runs locally from cloud-native Landsat):
   MPC STAC (landsat-c2-l2, all sensors via common asset names nir08/swir22/qa_pixel)
     -> windowed COG reads -> cloud-mask + annual median NBR composite (Jun-Sep)
-    -> lt_rust.landtrendr_pixel  (the Rust kernel; same engine the browser runs via WASM)
+    -> landtrendr.pixel  (the Rust kernel; same engine the browser runs via WASM)
 
 Window 1984-2016 (matches the published figure: the 1984-2000 stable baseline is the
 first segment that anchors the 2001 vertex; truncating to 2000 loses it).
@@ -28,7 +28,7 @@ import json, os, sys, time
 from collections import defaultdict
 from pathlib import Path
 import numpy as np
-import lt_rust as fc
+import landtrendr as fc
 
 HERE = Path(__file__).resolve().parent.parent
 DATA = HERE / "data"; DATA.mkdir(exist_ok=True)
@@ -176,7 +176,7 @@ def main():
     # recovery 0.25, pval 0.05, bestModelProportion 0.75, minObs 6. (overshoot +
     # preventOneYearRecovery are the Rust defaults.) NBR is loss-DOWN, which matches
     # the Rust kernel's loss=decrease convention -> feed raw NBR, no negation.
-    fit, vtx, rmse = fc.landtrendr_pixel(
+    fit, vtx, rmse = fc.pixel(
         np.ascontiguousarray(series), years.astype(np.int32),
         max_segments=6, spike_threshold=0.9, recovery_threshold=0.25,
         p_value_threshold=0.05, best_model_proportion=0.75, min_observations_needed=6)
@@ -208,7 +208,7 @@ def main():
                 [fit[i]*1000 for i in range(len(years)) if vtx[i]],
                 "s", color="#c53030", ms=7, label="vertices")
         ax.set_xlabel("year"); ax.set_ylabel("NBR x1000"); ax.set_title(
-            f"LandTrendr reference pixel {LON},{LAT} (LT-rust)")
+            f"LandTrendr reference pixel {LON},{LAT} (LT-rs)")
         ax.legend(frameon=False); ax.grid(alpha=0.2); fig.tight_layout()
         out = HERE / "fig21.png"; fig.savefig(out, dpi=120)
         print(f"[plot] {out.name}")

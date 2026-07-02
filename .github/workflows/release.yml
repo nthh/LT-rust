@@ -3,7 +3,7 @@ name: Release
 # Build abi3 wheels (one per platform, CPython >=3.10) + sdist and attach them to a
 # GitHub Release. Researchers then install with NO Rust toolchain:
 #
-#   pip install LT-rust --find-links https://github.com/<owner>/LT-rust/releases/latest
+#   pip install landtrendr --find-links https://github.com/<owner>/LT-rs/releases/latest
 #
 # Publishing to PyPI is intentionally NOT enabled here — see the commented `pypi`
 # job at the bottom. The natural owner of the LandTrendr family on PyPI is eMapR;

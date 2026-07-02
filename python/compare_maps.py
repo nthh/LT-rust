@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LT-GEE paper Figure 5, for our port: year-of-disturbance, GEE vs LT-rust,
+"""LT-GEE paper Figure 5, for our port: year-of-disturbance, GEE vs LT-rs,
 on the SAME GEE composites + the Table-2-style agreement.
 
 Reads gee_source.tif (the GEE composite NBR stack) and gee_distyear.tif (GEE's
@@ -14,7 +14,7 @@ from pathlib import Path
 import os
 import numpy as np
 import rasterio
-import lt_rust
+import landtrendr
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -48,7 +48,7 @@ for r in range(H):
         s = (src[:, r, c] / 1000.0).astype(np.float32)
         if np.isfinite(s).sum() < RUN["min_observations_needed"]:
             continue
-        fit, _, _ = lt_rust.landtrendr_pixel(np.ascontiguousarray(s), years.astype(np.int32), **RUN)
+        fit, _, _ = landtrendr.pixel(np.ascontiguousarray(s), years.astype(np.int32), **RUN)
         d = np.diff(np.asarray(fit))
         i = int(np.argmin(d))
         if d[i] < -DELTA:
@@ -64,7 +64,7 @@ cmap = LinearSegmentedColormap.from_list("dy", ["#2a9d8f", "#e9c46a", "#e76f51"]
 cmap.set_bad("#0a0a0a")
 fig, axes = plt.subplots(1, 2, figsize=(11, 5.6))
 im = None
-for ax, (lab, arr) in zip(axes, [("LT-GEE", gee_year), ("LT-rust", rust_year)]):
+for ax, (lab, arr) in zip(axes, [("LT-GEE", gee_year), ("LT-rs", rust_year)]):
     ax.set_facecolor("#0a0a0a")
     im = ax.imshow(np.ma.masked_invalid(arr), cmap=cmap, vmin=START, vmax=END, interpolation="nearest")
     ax.set_title(lab, fontsize=12); ax.set_xticks([]); ax.set_yticks([])

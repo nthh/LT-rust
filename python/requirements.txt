@@ -1,5 +1,5 @@
 # Dependencies for the validation/fetch harness in python/.
-# The lt_rust package itself needs only numpy; these are for reproducing the
+# The landtrendr package itself needs only numpy; these are for reproducing the
 # reference example and the GEE comparison. Install: pip install -r python/requirements.txt
 
 numpy

@@ -60,7 +60,7 @@ pub struct SegmentInfo {
 }
 
 /// Run LandTrendr segmentation on a single pixel time series.
-pub fn landtrendr_pixel(
+pub fn pixel(
     values: &[f32],
     years: &[i32],
     params: &LandTrendrParams,
@@ -81,7 +81,7 @@ pub fn landtrendr_pixel(
 
     // Delegate to the fast workspace-based implementation (single algorithm path)
     let mut ws = LandTrendrWorkspace::new();
-    let selected = landtrendr_pixel_core(values, years, n, params, &mut ws);
+    let selected = pixel_core(values, years, n, params, &mut ws);
 
     // Extract full results from workspace
     let fitted = ws.fitted[..n].to_vec();
@@ -111,9 +111,9 @@ pub fn landtrendr_pixel(
 
 /// Debug tape for differential validation against the LT-IDL reference. Returns
 /// (despiked series, stage-② candidate vertex indices, stage-③ vetted vertex
-/// indices), mirroring the front half of `landtrendr_pixel_core` exactly so
+/// indices), mirroring the front half of `pixel_core` exactly so
 /// the intermediate vertex sets can be diffed stage-by-stage against IDL.
-pub fn landtrendr_pixel_debug(
+pub fn pixel_debug(
     values: &[f32], years: &[i32], params: &LandTrendrParams,
 ) -> (Vec<f32>, Vec<usize>, Vec<usize>) {
     let n = values.len();
@@ -134,7 +134,7 @@ pub fn landtrendr_pixel_debug(
 }
 
 // ---------------------------------------------------------------------------
-// Shared helpers (used by both landtrendr_pixel and landtrendr_flat paths)
+// Shared helpers (used by both pixel and flat paths)
 // ---------------------------------------------------------------------------
 
 fn extract_segments(years: &[i32], fitted: &[f32], vertex_indices: &[usize]) -> Vec<SegmentInfo> {
@@ -364,7 +364,7 @@ fn vertex_importance(
 ) -> f64 {
     const DISTWEIGHTFACTOR: f64 = 2.0;
     // Square-aspect, loss-up scaled y-differences: dy = -(Δvalue)/val_range * year_range
-    // (negated because LT-rust carries the loss-down series; IDL segments loss-up).
+    // (negated because LT-rs carries the loss-down series; IDL segments loss-up).
     let dy1 = -((values[i_center] - values[i_left]) as f64) / val_range * year_range;
     let dy2 = -((values[i_right] - values[i_center]) as f64) / val_range * year_range;
     let dx1 = (years[i_center] - years[i_left]) as f64;
@@ -851,7 +851,7 @@ fn fit_and_select(
 /// Runs despike → vertex identification → model selection → recovery clamp.
 /// Returns selected candidate index; results are in ws.fitted and ws.cand_verts.
 #[inline]
-fn landtrendr_pixel_core(
+fn pixel_core(
     values: &[f32], years: &[i32], n: usize,
     params: &LandTrendrParams, ws: &mut LandTrendrWorkspace,
 ) -> usize {
@@ -949,7 +949,7 @@ fn landtrendr_pixel_core(
 ///   observations (so callers can mask on isfinite, matching extract.py's
 ///   `magnitude[~valid] = NaN`).
 #[inline]
-fn landtrendr_pixel_summary(
+fn pixel_summary(
     values: &[f32], years: &[i32], n: usize,
     params: &LandTrendrParams, ws: &mut LandTrendrWorkspace,
 ) -> (f32, f32, f32, f32) {
@@ -960,7 +960,7 @@ fn landtrendr_pixel_summary(
         return (0.0, f32::NAN, 0.0, f32::NAN);
     }
 
-    let selected = landtrendr_pixel_core(values, years, n, params, ws);
+    let selected = pixel_core(values, years, n, params, ws);
 
     // RMSE
     let mut sum_sq: f64 = 0.0;
@@ -1031,8 +1031,8 @@ fn landtrendr_pixel_summary(
 /// back-compat. Band 3 (peak_to_trough_magnitude) is the standard LandTrendr
 /// disturbance-depth statistic (fitted trough - fitted peak over the full
 /// trajectory; 0.0 for monotonic rises; NaN for under-observed pixels). See
-/// `landtrendr_pixel_summary` for the exact definition.
-pub fn landtrendr_flat(
+/// `pixel_summary` for the exact definition.
+pub fn flat(
     data: &[f32],
     pixel_count: usize,
     band_count: usize,
@@ -1053,7 +1053,7 @@ pub fn landtrendr_flat(
                 ts[t] = data[t * pixel_count + px];
             }
             let (mag, yr, rmse, ptt) =
-                landtrendr_pixel_summary(&ts, years, band_count, params, &mut ws);
+                pixel_summary(&ts, years, band_count, params, &mut ws);
             magnitude_out[px] = mag;
             year_out[px] = yr;
             rmse_out[px] = rmse;
@@ -1079,12 +1079,12 @@ pub fn landtrendr_flat(
         for t in 0..band_count {
             ts[t] = data[t * pixel_count + px];
         }
-        let result = landtrendr_pixel(&ts, years, params);
+        let result = pixel(&ts, years, params);
         // Net spectral change: last fitted value minus first
         let fitted = &result.fitted;
         magnitude_out[px] = fitted[fitted.len() - 1] - fitted[0];
         // Peak-to-trough over the full fitted trajectory (standard disturbance
-        // depth) — same definition as landtrendr_pixel_summary / extract.py.
+        // depth) — same definition as pixel_summary / extract.py.
         // Only computed for fitted pixels (>= min_observations_needed valid);
         // under-observed pixels leave ptt at the NaN init so they mask out.
         let n_valid_px = ts.iter().filter(|v| !v.is_nan()).count();
@@ -1128,11 +1128,11 @@ pub fn landtrendr_flat(
 /// signal (forestEnsembleFunctions L1795) — the fitted change *in* the target
 /// year, which the forest-loss ensemble's `getLtProbabilities` stretches to a
 /// 0-100 loss probability. It is distinct from `peak_to_trough` (band 3 of
-/// `landtrendr_flat`), which is the largest disturbance over the *whole*
+/// `flat`), which is the largest disturbance over the *whole*
 /// trajectory regardless of year. Signed in the input index's units; the caller
 /// orients (loss sign) and stretches. NaN where `target_year` is absent, has no
 /// prior year, or the pixel is under-observed.
-pub fn landtrendr_ftvdiff_flat(
+pub fn ftvdiff_flat(
     data: &[f32],
     pixel_count: usize,
     band_count: usize,
@@ -1148,8 +1148,8 @@ pub fn landtrendr_ftvdiff_flat(
     if band_count > LT_MAX_N {
         return out; // the validated fast-path fit only supports band_count <= LT_MAX_N
     }
-    // Use the SAME fast-path fit as landtrendr_flat (despike -> vertices -> segment
-    // fit, leaving the fitted trajectory in ws.fitted). landtrendr_pixel is a
+    // Use the SAME fast-path fit as flat (despike -> vertices -> segment
+    // fit, leaving the fitted trajectory in ws.fitted). pixel is a
     // separate, over-smoothing path — do not use it here.
     let mut ws = LandTrendrWorkspace::new();
     let mut ts = vec![0.0f32; band_count];
@@ -1161,7 +1161,7 @@ pub fn landtrendr_ftvdiff_flat(
         if n_valid < params.min_observations_needed {
             continue; // leave NaN
         }
-        landtrendr_pixel_core(&ts, years, band_count, params, &mut ws);
+        pixel_core(&ts, years, band_count, params, &mut ws);
         out[px] = ws.fitted[idx] - ws.fitted[idx - 1];
     }
     out
@@ -1171,13 +1171,13 @@ pub fn landtrendr_ftvdiff_flat(
 ///
 /// Sums the loss-direction per-year fitted drops `max(0, fitted[y-1] - fitted[y])` over
 /// `[target_year - half_window, target_year + half_window]`. When a disturbance is fit as a
-/// multi-year ramp, the single-year `landtrendr_ftvdiff_flat` reads only ~1/N of a loss
+/// multi-year ramp, the single-year `ftvdiff_flat` reads only ~1/N of a loss
 /// spread over N years (low recall); the window recovers the full magnitude. `half_window = 0`
 /// is the single-year loss (clamped to >= 0). Returns a NON-NEGATIVE loss magnitude in the
 /// input index's units (loss-down convention); the caller stretches to a loss probability.
 /// Trade-off: a window gives up some year precision (a loss in target+-1 counts toward
 /// target). NaN where target_year is absent / has no prior year / the pixel is under-observed.
-pub fn landtrendr_loss_window(
+pub fn loss_window(
     data: &[f32], pixel_count: usize, band_count: usize, years: &[i32],
     target_year: i32, half_window: usize, params: &LandTrendrParams,
 ) -> Vec<f32> {
@@ -1200,7 +1200,7 @@ pub fn landtrendr_loss_window(
         if ts.iter().filter(|v| !v.is_nan()).count() < params.min_observations_needed {
             continue;
         }
-        landtrendr_pixel_core(&ts, years, band_count, params, &mut ws);
+        pixel_core(&ts, years, band_count, params, &mut ws);
         let mut loss = 0.0f32;
         for y in lo..=hi {
             loss += (ws.fitted[y - 1] - ws.fitted[y]).max(0.0);

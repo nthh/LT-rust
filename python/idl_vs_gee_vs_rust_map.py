@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Three-panel year-of-disturbance MAPS — LT-IDL (GDL) vs LT-GEE vs LT-rust — for
+"""Three-panel year-of-disturbance MAPS — LT-IDL (GDL) vs LT-GEE vs LT-rs — for
 every validation scene (forest, cropland, arid). Each scene's whole raster is run
 through the original LandTrendr IDL in a SINGLE GDL session (binary I/O, one
 compile), so IDL≈GEE≈Rust agreement is shown at the map level, not just at the 5
@@ -19,7 +19,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
-import lt_rust  # noqa: E402
+import landtrendr  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 GDL = os.path.expanduser("~/Applications/GNU Data Language.app/Contents/Resources/bin/gdl")
@@ -58,7 +58,7 @@ def rust_map(flat_raw, npix):
         s = (s / 1000.0).astype(np.float32)
         if np.isfinite(s).sum() < CANON["min_observations_needed"]:
             continue
-        fit, _, _ = lt_rust.landtrendr_pixel(np.ascontiguousarray(s), YEARS.astype(np.int32), **CANON)
+        fit, _, _ = landtrendr.pixel(np.ascontiguousarray(s), YEARS.astype(np.int32), **CANON)
         out[p] = distyear_from_fit(np.asarray(fit) * 1000.0)
     return out
 
@@ -146,7 +146,7 @@ def run_scene(tag, scene, label):
     print(f"[{scene}] disturbed%%: IDL {pct(idl_year):.0f} GEE {pct(gee_year):.0f} rust {pct(rust_year):.0f}"
           f"  |  IoU IDL-GEE {ig:.2f} rust-GEE {rg:.2f} IDL-rust {ir:.2f}")
 
-    panels = [("LT-IDL (GDL)", idl_year), ("LT-GEE", gee_year), ("LT-rust", rust_year)]
+    panels = [("LT-IDL (GDL)", idl_year), ("LT-GEE", gee_year), ("LT-rs", rust_year)]
     fig, axes = plt.subplots(1, 3, figsize=(15, 5.4))
     im = None
     for ax, (lab, arr) in zip(axes, panels):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Native GEE LandTrendr ground truth on GEE's OWN annual NBR composites.
 
-The reference LT-rust is validated against: GEE builds the annual composites AND runs
+The reference LT-rs is validated against: GEE builds the annual composites AND runs
 LandTrendr, exactly as in LT-GEE. We capture both so compare.py can check two things
 separately:
   - compositing: GEE's annual NBR vs our MPC annual NBR (data/nbr_*.npz)

@@ -18,7 +18,7 @@ Run: .venv-lazy/bin/python python/paper_compare.py
 import json
 from pathlib import Path
 import numpy as np
-import lt_rust
+import landtrendr
 
 ROOT = Path(__file__).resolve().parent.parent
 GEE = json.load(open(ROOT / "data" / "gee_truth.json"))
@@ -50,7 +50,7 @@ for p in GEE["pixels"]:
     gsrc = arr(p, "source", np.float32)
     gfit = arr(p, "fitted")
     gvtx = np.array(p["vertex"], int)
-    fit, vtx, _ = lt_rust.landtrendr_pixel(
+    fit, vtx, _ = landtrendr.pixel(
         np.ascontiguousarray(gsrc / 1000.0, np.float32), years.astype(np.int32), **CANON)
     rfit = np.asarray(fit) * 1000.0
     rvtx = np.asarray(vtx).astype(int)

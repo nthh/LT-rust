@@ -23,7 +23,7 @@ Run: .venv-lazy/bin/python python/ablate.py
 import json
 from pathlib import Path
 import numpy as np
-import lt_rust
+import landtrendr
 
 ROOT = Path(__file__).resolve().parent.parent
 GEE = json.load(open(ROOT / "data" / "gee_truth.json"))
@@ -47,7 +47,7 @@ def metrics_for_pixel(p, params):
     gvtx = np.array(p["vertex"], int)
     gvy = set(int(years[i]) for i in range(len(years)) if gvtx[i])
 
-    fit, vtx, _ = lt_rust.landtrendr_pixel(
+    fit, vtx, _ = landtrendr.pixel(
         np.ascontiguousarray(gsrc / 1000.0, np.float32), years.astype(np.int32), **params)
     rfit = np.asarray(fit) * 1000.0
     rvy = set(int(years[i]) for i in range(len(years)) if np.asarray(vtx).astype(int)[i])

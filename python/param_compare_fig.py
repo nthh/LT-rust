@@ -9,7 +9,7 @@ Saves to ~/Downloads/landtrendr_param_compare.png.
 from pathlib import Path
 import numpy as np
 import rasterio
-import lt_rust as lt
+import landtrendr as lt
 import warnings
 warnings.filterwarnings("ignore")
 import matplotlib
@@ -47,7 +47,7 @@ def run(p):
             s = (src[:, r, c] / 1000.0).astype(np.float32)
             if np.isfinite(s).sum() < 6:
                 continue
-            fit, _, _ = lt.landtrendr_pixel(np.ascontiguousarray(s), yrs, **BASE, **p)
+            fit, _, _ = lt.pixel(np.ascontiguousarray(s), yrs, **BASE, **p)
             d = np.diff(np.asarray(fit))
             i = int(np.argmin(d))
             drop[r, c] = -d[i]

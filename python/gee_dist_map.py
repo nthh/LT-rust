@@ -5,7 +5,7 @@ Produces the GEE side of the LT-GEE paper's Figure 5 comparison: it runs the
 native GEE LandTrendr (ee.Algorithms.TemporalSegmentation.LandTrendr, the same
 engine eMapR's LandTrendr.js wraps) and exports the per-year FITTED and SOURCE
 NBR as GeoTIFF stacks. Disturbance-year extraction is then done locally and
-*identically* for GEE and for the LT-rust kernel (see compare_maps.py), so the
+*identically* for GEE and for the LT-rs kernel (see compare_maps.py), so the
 two maps differ only by the segmentation, not by the change-extraction logic.
 
 Self-contained: needs only `earthengine-api` + an authenticated EE account.
