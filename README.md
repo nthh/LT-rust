@@ -4,6 +4,11 @@ Rust **LandTrendr** (Kennedy 2010/2018), validated against the original LandTren
 and Google Earth Engine. A pixel's annual NBR trajectory in, the fitted trajectory and
 disturbance/recovery breakpoints out. One kernel for local, Python (PyO3), and browser (WASM).
 
+Same algorithm, ~1.6M pixels/second across cores — versus a few hundred pixels/second
+for the original IDL under GDL (`python/bench_idl_vs_rust.py`). The raster functions
+parallelize automatically; disable with `--no-default-features` for single-threaded
+targets (e.g. WASM).
+
 ## Install
 
 Prebuilt wheels (CPython ≥3.10, incl. 3.14) are attached to each
