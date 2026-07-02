@@ -10,17 +10,13 @@ import json
 import os
 import subprocess
 import tempfile
-from pathlib import Path
 
 import numpy as np
 import landtrendr
 
-ROOT = Path(__file__).resolve().parent.parent
-GDL = os.path.expanduser(
-    "~/Applications/GNU Data Language.app/Contents/Resources/bin/gdl"
-)
-HARNESS = ROOT / "idl-harness"
-LTSRC = Path.home() / "projects" / "LandTrendr-2012"
+from idl_env import ROOT, require_gdl
+
+GDL, LTSRC, HARNESS = require_gdl()
 GEE = json.load(open(ROOT / "data" / "gee_truth.json"))
 CANON = dict(
     max_segments=6, spike_threshold=0.9, recovery_threshold=0.25,

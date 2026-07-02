@@ -10,7 +10,6 @@ Run: .venv-lazy/bin/python python/idl_vs_gee_vs_rust_map.py
 import os
 import subprocess
 import tempfile
-from pathlib import Path
 
 import numpy as np
 import rasterio
@@ -21,10 +20,9 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 import landtrendr  # noqa: E402
 
-ROOT = Path(__file__).resolve().parent.parent
-GDL = os.path.expanduser("~/Applications/GNU Data Language.app/Contents/Resources/bin/gdl")
-HARNESS = ROOT / "idl-harness"
-LTSRC = Path.home() / "projects" / "LandTrendr-2012"
+from idl_env import ROOT, require_gdl  # noqa: E402
+
+GDL, LTSRC, HARNESS = require_gdl()
 START, END = 1984, 2016
 DELTA1000 = 150.0      # 0.15 NBR drop = disturbance call (compare_maps convention)
 NODATA = -32768.0

@@ -12,28 +12,24 @@ IDL translation. Running IDL directly lets us check that claim *and* gives a
 white-box gold standard to validate a future faithful tbcd_v2 port against,
 instead of guessing against GEE.
 
-Setup (one-time):
-  - GDL prebuilt headless app at ~/Applications/GNU Data Language.app
-  - LandTrendr-2012 IDL source cloned at ~/projects/LandTrendr-2012
-  - idl-harness/ shims (regress.pro, f_test1.pro) on the GDL path
+Setup (one-time): see idl-harness/README.md. In short, install GDL and clone
+the LandTrendr-2012 IDL source, then point at them:
+  export GDL_BIN=/path/to/gdl
+  export LANDTRENDR_IDL=/path/to/LandTrendr-2012
 
-Run: .venv-lazy/bin/python python/idl_compare.py
+Run: python python/idl_compare.py
 """
 import json
 import os
 import subprocess
 import tempfile
-from pathlib import Path
 
 import numpy as np
 import landtrendr
 
-ROOT = Path(__file__).resolve().parent.parent
-GDL = os.path.expanduser(
-    "~/Applications/GNU Data Language.app/Contents/Resources/bin/gdl"
-)
-HARNESS = ROOT / "idl-harness"
-LTSRC = Path.home() / "projects" / "LandTrendr-2012"
+from idl_env import ROOT, require_gdl
+
+GDL, LTSRC, HARNESS = require_gdl()
 GEE = json.load(open(ROOT / "data" / "gee_truth.json"))
 
 CANON = dict(

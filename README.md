@@ -81,7 +81,8 @@ per-pixel year of greatest disturbance (disturbed-pixel IoU + overall agreement)
 Forest matches closely on all three. On cropland even IDL and GEE only agree at 0.69 —
 annual harvest cycles are marginal signals for LandTrendr — and LT-rs tracks IDL to
 0.67, near that intrinsic ceiling; arid has no disturbance to find, so all three agree.
-The 3-panel maps come from `python/idl_vs_gee_vs_rust_map.py` (needs GDL; see `idl-harness/`).
+The 3-panel maps come from `python/idl_vs_gee_vs_rust_map.py`, which runs the original
+IDL under GDL — see [`idl-harness/README.md`](idl-harness/README.md) for the one-time setup.
 
 ```bash
 pip install -r python/requirements.txt

@@ -16,11 +16,9 @@ import landtrendr
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from idl_compare import CANON  # noqa: E402
+from idl_env import ROOT, require_gdl  # noqa: E402
 
-ROOT = Path(__file__).resolve().parent.parent
-GDL = os.path.expanduser("~/Applications/GNU Data Language.app/Contents/Resources/bin/gdl")
-HARNESS = ROOT / "idl-harness"
-LTSRC = Path.home() / "projects" / "LandTrendr-2012"
+GDL, LTSRC, HARNESS = require_gdl()
 DELTA1000 = 150.0
 
 DRIVER = """!QUIET=1
